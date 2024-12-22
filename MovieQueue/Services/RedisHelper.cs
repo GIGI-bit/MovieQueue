@@ -16,7 +16,7 @@ namespace MovieQueue.Services
         {
             _database = connectionMultiplexer.GetDatabase();
         }
-
+        
         public void SaveMovieToRedis(string listKey, string movieName, string posterUrl)
         {
             var movieData = new

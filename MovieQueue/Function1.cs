@@ -11,29 +11,44 @@ namespace MovieQueue
     public class Function1
     {
         private readonly ILogger<Function1> _logger;
-        private readonly IQueueService queueService;
         private readonly RedisHelper redisHelper;
         private static readonly HttpClient client = new HttpClient();
-        public Function1(ILogger<Function1> logger, IQueueService queueService, RedisHelper redisHelper)
+
+        public Function1(ILogger<Function1> logger, RedisHelper redisHelper)
         {
             _logger = logger;
-            this.queueService = queueService;
             this.redisHelper = redisHelper;
         }
 
+        //private readonly IQueueService queueService;
+        //public Function1(ILogger<Function1> logger, IQueueService queueService, RedisHelper redisHelper)
+        //{
+        //    _logger = logger;
+        //    this.queueService = queueService;
+        //    this.redisHelper = redisHelper;
+        //}
+
         [Function(nameof(Function1))]
-        public async Task Run([QueueTrigger("myhomeworkqueue", Connection = "AzureWebJobsStorage")] QueueMessage message)
+        public async Task Run([QueueTrigger("mynewqueue", Connection = "AzureWebJobsStorage")] QueueMessage message)
         {
             string apiKey = Environment.GetEnvironmentVariable("OMDB_API_KEY");
-            HttpResponseMessage response = await client.GetAsync($"http://www.omdbapi.com/?apikey=[{apiKey}]&");
-            response.EnsureSuccessStatusCode();
+            HttpResponseMessage response = await client.GetAsync($"http://www.omdbapi.com/?apikey={apiKey}&t={message.MessageText}");
+            //response.EnsureSuccessStatusCode();
 
-            string jsonResponse = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
 
-            // Deserialize the data (optional for class structure)
-            var movieInfo = JsonSerializer.Deserialize<MovieInfo>(jsonResponse);
+                string jsonResponse = await response.Content.ReadAsStringAsync();
 
-            redisHelper.SaveMovieToRedis("movies", movieInfo.Title, movieInfo.Poster);
+                var movieInfo = JsonSerializer.Deserialize<MovieInfo>(jsonResponse);
+                if (movieInfo.Title != null)
+                {
+
+                    redisHelper.SaveMovieToRedis("movies", movieInfo.Title, movieInfo.Poster);
+                }
+
+            }
+
 
             _logger.LogInformation($"C# Queue trigger function processed: {message.MessageText}");
 

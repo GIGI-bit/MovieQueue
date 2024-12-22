@@ -26,6 +26,7 @@ internal class Program
          });
         //redis - cli - u redis://default:2cncW8bIijfJh68IgKu6Pm29jGvlnGck@redis-14728.c326.us-east-1-3.ec2.redns.redis-cloud.com:14728
         builder.Services.AddSingleton<IConnectionMultiplexer>(muxer);
+        builder.Services.AddTransient<RedisHelper>();
 
 
         var azureStorageConnectionString = builder.Configuration.GetValue<string>("AzureWebJobsStorage");
